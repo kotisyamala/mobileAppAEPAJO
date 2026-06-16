@@ -1,0 +1,29 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+# Grant write permissions for the action to push to the gh-pages branch
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code 🛎️
+        uses: actions/checkout@v4
+
+      - name: Install dependencies and build assets 🔧
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy static assets to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
