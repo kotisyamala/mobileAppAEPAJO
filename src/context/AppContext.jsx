@@ -1,0 +1,223 @@
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { plans, faqResponses, defaultBotResponse } from "../data/plans";
+import { AjoService } from "../services/AjoService";
+
+const AppContext = createContext();
+
+export const useApp = () => useContext(AppContext);
+
+export const AppProvider = ({ children }) => {
+  const [activeTab, setActiveTab] = useState("usage");
+  const [activePlan, setActivePlan] = useState(plans[1]); // Defaults to 5G Pro Unlimited
+  
+  // Usage Telemetry (Seeded with realistic mid-month data)
+  const [dataUsed, setDataUsed] = useState(34.2);
+  const [dataLimit, setDataLimit] = useState(plans[1].dataLimit);
+  const [minsUsed, setMinsUsed] = useState(210);
+  const [minsLimit, setMinsLimit] = useState(500);
+  const [smsUsed, setSmsUsed] = useState(142);
+  const [smsLimit, setSmsLimit] = useState(1000);
+  
+  // Billing Telemetry
+  const [nextBillDate, setNextBillDate] = useState("June 30, 2026");
+  const [nextBillAmount, setNextBillAmount] = useState(plans[1].price);
+  const [isAutoPayEnabled, setIsAutoPayEnabled] = useState(true);
+  
+  // AJO Configuration State
+  const [ajoCredentials, setAjoCredentials] = useState(() => {
+    const saved = localStorage.getItem("aether_ajo_creds");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse AJO credentials from local storage");
+      }
+    }
+    return {
+      datastreamId: import.meta.env.VITE_AEP_DATASTREAM_ID || "",
+      orgId: import.meta.env.VITE_AEP_ORG_ID || "",
+      popupSurface: import.meta.env.VITE_AJO_SURFACE_POPUP || "mobileapp://aether-connect/reload-popup",
+      dashboardSurface: import.meta.env.VITE_AJO_SURFACE_DASHBOARD || "mobileapp://aether-connect/dashboard-banner"
+    };
+  });
+
+  const [ajoOffers, setAjoOffers] = useState(null);
+  const [isAjoLoading, setIsAjoLoading] = useState(false);
+  const [ajoError, setAjoError] = useState(null);
+
+  const saveAjoCredentials = (newCreds) => {
+    setAjoCredentials(newCreds);
+    localStorage.setItem("aether_ajo_creds", JSON.stringify(newCreds));
+    showToast("AJO configurations saved!");
+  };
+
+  // Trigger AJO propositions fetch
+  useEffect(() => {
+    const fetchOffers = async () => {
+      setIsAjoLoading(true);
+      setAjoError(null);
+      try {
+        const offers = await AjoService.fetchOffers(ajoCredentials);
+        setAjoOffers(offers);
+      } catch (err) {
+        console.error("Error fetching AJO propositions:", err);
+        setAjoError(err.message || "Failed to fetch offers from Adobe Experience Edge");
+        setAjoOffers(null);
+      } finally {
+        setIsAjoLoading(false);
+      }
+    };
+    fetchOffers();
+  }, [ajoCredentials]);
+
+  // States
+  const [boostersActive, setBoostersActive] = useState([]);
+  const [theme, setTheme] = useState("dark"); // Default to dark mode for sleek tech aesthetic
+  const [isAddonOpen, setIsAddonOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+
+  // Chat Support Logs
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      sender: "bot",
+      text: "Hello! Welcome to Aether Connect Priority Support. Ask me anything about your network speed, billing invoices, or eSIM QR codes.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+
+  // Toast notifier
+  const showToast = (message, type = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  // Change Plan
+  const changePlan = (plan) => {
+    setActivePlan(plan);
+    setDataLimit(plan.dataLimit);
+    setNextBillAmount(plan.price);
+    showToast(`Successfully subscribed to ${plan.name}`);
+  };
+
+  // Buy Booster Addon
+  const buyBooster = (booster) => {
+    setBoostersActive((prev) => [...prev, booster]);
+    
+    // Add charges to next bill
+    setNextBillAmount((prev) => prev + booster.price);
+
+    // Apply effects based on type
+    if (booster.type === "data") {
+      setDataLimit((prev) => prev + booster.value);
+      showToast(`Added +${booster.value}GB high-speed data!`);
+    } else if (booster.type === "roaming") {
+      showToast(`Global Travel Pass activated for 7 days!`);
+    } else if (booster.type === "hotspot") {
+      showToast("Hotspot feature unlocked for 30 days!");
+    }
+    
+    setIsAddonOpen(false);
+  };
+
+  // Chat Support Input Processing
+  const sendChatMessage = (text) => {
+    if (!text.trim()) return;
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsg = { id: Date.now(), sender: "user", text, timestamp };
+    setChatMessages((prev) => [...prev, userMsg]);
+
+    // Bot response calculation
+    const query = text.toLowerCase();
+    let botReplyText = "";
+
+    const matchedFAQ = faqResponses.find((faq) =>
+      faq.keywords.some((keyword) => query.includes(keyword))
+    );
+
+    if (matchedFAQ) {
+      botReplyText = matchedFAQ.response;
+    } else {
+      botReplyText = defaultBotResponse;
+    }
+
+    // Delayed bot response simulation (for premium native feel)
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: "bot",
+          text: botReplyText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    }, 800);
+  };
+
+  // Theme switcher
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  // Auto-Pay Toggle
+  const toggleAutoPay = () => {
+    setIsAutoPayEnabled((prev) => !prev);
+    showToast(isAutoPayEnabled ? "Auto-Pay disabled" : "Auto-Pay enabled", "info");
+  };
+
+  // Apply theme class to document body
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark-mode");
+    } else {
+      root.classList.remove("dark-mode");
+    }
+  }, [theme]);
+
+  return (
+    <AppContext.Provider
+      value={{
+        activeTab,
+        setActiveTab,
+        activePlan,
+        changePlan,
+        dataUsed,
+        setDataUsed,
+        dataLimit,
+        setDataLimit,
+        minsUsed,
+        minsLimit,
+        smsUsed,
+        smsLimit,
+        nextBillDate,
+        nextBillAmount,
+        setNextBillAmount,
+        isAutoPayEnabled,
+        toggleAutoPay,
+        boostersActive,
+        buyBooster,
+        chatMessages,
+        sendChatMessage,
+        theme,
+        toggleTheme,
+        isAddonOpen,
+        setIsAddonOpen,
+        toasts,
+        showToast,
+        ajoCredentials,
+        saveAjoCredentials,
+        ajoOffers,
+        isAjoLoading,
+        ajoError,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+};
