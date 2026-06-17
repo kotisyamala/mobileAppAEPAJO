@@ -1,0 +1,16 @@
+{
+  "short_name": "Aether",
+  "name": "Aether Connect eSIM",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/mobileAppAEPAJO/",
+  "background_color": "#080C14",
+  "theme_color": "#080C14",
+  "display": "standalone",
+  "orientation": "portrait"
+}
