@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import jsQR from "jsqr";
 import { useApp } from "../context/AppContext";
 import { CreditCard, Download, ShieldCheck, Sun, Moon, QrCode, ToggleLeft, ToggleRight, X } from "lucide-react";
 
@@ -27,6 +28,7 @@ const ProfileSettings = () => {
 
   // Camera integration logic
   const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState(null);
 
@@ -62,6 +64,59 @@ const ProfileSettings = () => {
       videoRef.current.srcObject = cameraStream;
     }
   }, [cameraStream]);
+
+  // Decode frames from the video stream using jsQR
+  React.useEffect(() => {
+    let active = true;
+    let animationFrameId = null;
+
+    const scan = () => {
+      if (!active) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert"
+          });
+
+          if (code && code.data) {
+            console.log("AEP Assurance: Scanned QR data:", code.data);
+            const connected = connectAssuranceSession(code.data);
+            if (connected) {
+              handleCloseScanner();
+              active = false;
+              return;
+            }
+          }
+        }
+      }
+
+      if (active && isAssuranceScannerOpen && cameraStream) {
+        animationFrameId = requestAnimationFrame(scan);
+      }
+    };
+
+    if (isAssuranceScannerOpen && cameraStream) {
+      animationFrameId = requestAnimationFrame(scan);
+    }
+
+    return () => {
+      active = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isAssuranceScannerOpen, cameraStream]);
 
   // Ensure camera tracks are closed if the component unmounts
   React.useEffect(() => {
@@ -613,6 +668,9 @@ const ProfileSettings = () => {
                     zIndex: 1,
                   }}
                 />
+
+                {/* Hidden canvas for frame analysis */}
+                <canvas ref={canvasRef} style={{ display: "none" }} />
 
                 {/* Horizontal Pulsing Laser Sweeper Line */}
                 <div
