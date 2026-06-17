@@ -25,6 +25,43 @@ const ProfileSettings = () => {
   const [pinInput, setPinInput] = useState("");
   const [isAssuranceScannerOpen, setIsAssuranceScannerOpen] = useState(false);
 
+  // Camera integration logic
+  const videoRef = React.useRef(null);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
+
+  React.useEffect(() => {
+    let activeStream = null;
+
+    const startCamera = async () => {
+      if (isAssuranceScannerOpen) {
+        setCameraError(null);
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+          });
+          activeStream = stream;
+          setCameraStream(stream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.error("Camera access error:", err);
+          setCameraError(err.message || "Camera blocked or unavailable");
+        }
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop());
+      }
+      setCameraStream(null);
+    };
+  }, [isAssuranceScannerOpen]);
+
   const handleCredChange = (e) => {
     const { name, value } = e.target;
     setFormCreds((prev) => ({ ...prev, [name]: value }));
@@ -530,7 +567,7 @@ const ProfileSettings = () => {
                 Hold your phone camera up to the QR code inside the Adobe Experience Platform Assurance console to sync.
               </p>
 
-              {/* Styled Mock Scanner Viewport */}
+              {/* Styled Viewport */}
               <div
                 style={{
                   width: "240px",
@@ -548,6 +585,25 @@ const ProfileSettings = () => {
                   boxShadow: "0 0 20px var(--accent-glow)",
                 }}
               >
+                {/* Real video webcam stream tag */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: cameraError || !cameraStream ? "none" : "block",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 1,
+                  }}
+                />
+
                 {/* Horizontal Pulsing Laser Sweeper Line */}
                 <div
                   style={{
@@ -559,25 +615,27 @@ const ProfileSettings = () => {
                     backgroundColor: "var(--accent-color)",
                     boxShadow: "0 0 10px var(--accent-color)",
                     animation: "scanner-laser 2s infinite ease-in-out",
-                    zIndex: 2,
+                    zIndex: 3,
                   }}
                 />
 
                 {/* Corner grid guides */}
-                <div style={{ position: "absolute", top: 12, left: 12, width: 16, height: 16, borderTop: "2px solid #fff", borderLeft: "2px solid #fff" }} />
-                <div style={{ position: "absolute", top: 12, right: 12, width: 16, height: 16, borderTop: "2px solid #fff", borderRight: "2px solid #fff" }} />
-                <div style={{ position: "absolute", bottom: 12, left: 12, width: 16, height: 16, borderBottom: "2px solid #fff", borderLeft: "2px solid #fff" }} />
-                <div style={{ position: "absolute", bottom: 12, right: 12, width: 16, height: 16, borderBottom: "2px solid #fff", borderRight: "2px solid #fff" }} />
+                <div style={{ position: "absolute", top: 12, left: 12, width: 16, height: 16, borderTop: "2px solid #fff", borderLeft: "2px solid #fff", zIndex: 4 }} />
+                <div style={{ position: "absolute", top: 12, right: 12, width: 16, height: 16, borderTop: "2px solid #fff", borderRight: "2px solid #fff", zIndex: 4 }} />
+                <div style={{ position: "absolute", bottom: 12, left: 12, width: 16, height: 16, borderBottom: "2px solid #fff", borderLeft: "2px solid #fff", zIndex: 4 }} />
+                <div style={{ position: "absolute", bottom: 12, right: 12, width: 16, height: 16, borderBottom: "2px solid #fff", borderRight: "2px solid #fff", zIndex: 4 }} />
 
-                {/* Loader status */}
-                <div style={{ zIndex: 1, color: "var(--text-secondary)", fontSize: "0.74rem", display: "flex", flexDirection: "column", gap: "6px", alignItems: "center" }}>
-                  <span style={{ fontWeight: "600", letterSpacing: "0.05em", color: "var(--accent-color)", animation: "pulse 1.5s infinite" }}>
-                    CDP QR RECEIVER ONLINE
-                  </span>
-                  <span style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
-                    SCANNING CONDUIT...
-                  </span>
-                </div>
+                {/* Loader status, displayed if camera stream loading or errored */}
+                {(cameraError || !cameraStream) && (
+                  <div style={{ zIndex: 2, padding: "0 16px", color: "var(--text-secondary)", fontSize: "0.74rem", display: "flex", flexDirection: "column", gap: "6px", alignItems: "center" }}>
+                    <span style={{ fontWeight: "600", letterSpacing: "0.05em", color: cameraError ? "#FF1744" : "var(--accent-color)", animation: cameraError ? "none" : "pulse 1.5s infinite" }}>
+                      {cameraError ? "CAMERA ERROR" : "REQUESTING CAMERA..."}
+                    </span>
+                    <span style={{ fontSize: "0.62rem", textAlign: "center", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      {cameraError ? cameraError : "Please allow device camera permission in the popup."}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Action Simulation handlers */}
