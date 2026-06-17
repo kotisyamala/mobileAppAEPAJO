@@ -6,6 +6,7 @@ export default defineConfig({
   base: '/mobileAppAEPAJO/',
   plugins: [react()],
   server: {
+    cors: true,
     proxy: {
       '/api/ajo-edge': {
         target: 'https://63.140.39.210',
