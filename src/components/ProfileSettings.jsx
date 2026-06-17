@@ -30,37 +30,47 @@ const ProfileSettings = () => {
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState(null);
 
+  const handleOpenScanner = async () => {
+    setIsAssuranceScannerOpen(true);
+    setCameraError(null);
+    setCameraStream(null);
+
+    // Call getUserMedia synchronously inside the user gesture callback for iOS PWA/Safari compliance
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      setCameraStream(stream);
+    } catch (err) {
+      console.error("Camera access error:", err);
+      setCameraError(err.message || "Camera blocked or unavailable");
+    }
+  };
+
+  const handleCloseScanner = () => {
+    setIsAssuranceScannerOpen(false);
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    setCameraStream(null);
+    setCameraError(null);
+  };
+
+  // Bind video stream once the video element is mounted and stream is active
   React.useEffect(() => {
-    let activeStream = null;
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
 
-    const startCamera = async () => {
-      if (isAssuranceScannerOpen) {
-        setCameraError(null);
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" }
-          });
-          activeStream = stream;
-          setCameraStream(stream);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } catch (err) {
-          console.error("Camera access error:", err);
-          setCameraError(err.message || "Camera blocked or unavailable");
-        }
-      }
-    };
-
-    startCamera();
-
+  // Ensure camera tracks are closed if the component unmounts
+  React.useEffect(() => {
     return () => {
-      if (activeStream) {
-        activeStream.getTracks().forEach((track) => track.stop());
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
       }
-      setCameraStream(null);
     };
-  }, [isAssuranceScannerOpen]);
+  }, [cameraStream]);
 
   const handleCredChange = (e) => {
     const { name, value } = e.target;
@@ -390,7 +400,7 @@ const ProfileSettings = () => {
                 Connect Session
               </button>
               <button
-                onClick={() => setIsAssuranceScannerOpen(true)}
+                onClick={handleOpenScanner}
                 className="btn-secondary"
                 style={{ display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", gap: "6px", padding: "10px", fontSize: "0.8rem" }}
               >
@@ -537,13 +547,13 @@ const ProfileSettings = () => {
       {/* AEP Assurance QR Code Scanner Sheet Overlay */}
       {isAssuranceScannerOpen && (
         <>
-          <div className="sheet-backdrop open" onClick={() => setIsAssuranceScannerOpen(false)} />
+          <div className="sheet-backdrop open" onClick={handleCloseScanner} />
           <div className="bottom-sheet open" style={{ minHeight: "440px" }}>
             <div className="bottom-sheet-drag-handle" />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 24px", alignItems: "center" }}>
               <span className="pill-tag" style={{ background: "var(--accent-glow)", color: "var(--accent-color)" }}>Assurance Scanner</span>
               <button
-                onClick={() => setIsAssuranceScannerOpen(false)}
+                onClick={handleCloseScanner}
                 style={{
                   width: 32,
                   height: 32,
@@ -644,7 +654,7 @@ const ProfileSettings = () => {
                   onClick={() => {
                     const mockUrl = "https://kotisyamala.github.io/mobileAppAEPAJO/?adb_validation_sessionid=mock-qr-session-9042";
                     connectAssuranceSession(mockUrl, "7890");
-                    setIsAssuranceScannerOpen(false);
+                    handleCloseScanner();
                   }}
                   className="btn-primary"
                   style={{ padding: "12px", fontSize: "0.85rem" }}
@@ -652,7 +662,7 @@ const ProfileSettings = () => {
                   Simulate QR Scan (Connects Trace)
                 </button>
                 <button
-                  onClick={() => setIsAssuranceScannerOpen(false)}
+                  onClick={handleCloseScanner}
                   className="btn-secondary"
                   style={{ padding: "12px", fontSize: "0.85rem" }}
                 >
