@@ -343,6 +343,41 @@ const ProfileSettings = () => {
               className="form-input"
               style={{ padding: "10px 12px", fontSize: "0.85rem" }}
             />
+            <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", display: "block", marginTop: "4px", lineHeight: "1.4" }}>
+              💡 If defaulting to <code>https://edge.adobedc.net</code> fails on mobile Safari due to tracking blockers, use your Mac's dev proxy URL (e.g. <code>http://&lt;your-mac-ip&gt;:5173/api/ajo-edge</code>) while connected to the same Wi-Fi.
+            </span>
+            {(() => {
+              if (typeof window === "undefined" || !window.location) return null;
+              const hostname = window.location.hostname;
+              const isLocal = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(hostname);
+              if (!isLocal) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormCreds(prev => ({ ...prev, edgeHost: `http://${window.location.host}/api/ajo-edge` }));
+                    showToast("Edge Host set to local network proxy!", "success");
+                  }}
+                  style={{
+                    marginTop: "8px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 10px",
+                    fontSize: "0.68rem",
+                    fontWeight: "600",
+                    color: "var(--accent-color)",
+                    backgroundColor: "var(--bg-tertiary)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  Autopopulate Local Proxy
+                </button>
+              );
+            })()}
           </div>
           <button
             type="submit"

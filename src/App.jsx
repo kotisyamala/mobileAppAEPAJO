@@ -7,12 +7,24 @@ import ChatSupport from "./components/ChatSupport";
 import ProfileSettings from "./components/ProfileSettings";
 import AddonModal from "./components/AddonModal";
 import Toast from "./components/Toast";
-import { Sun, Moon, AlertTriangle } from "lucide-react";
+import { Sun, Moon, AlertTriangle, RotateCw } from "lucide-react";
 
 // Nested InnerApp component to access Context
 const InnerApp = () => {
-  const { activeTab, theme, toggleTheme, showToast, ajoOffers, ajoError, assuranceSessionId, clearAssuranceSession } = useApp();
+  const { 
+    activeTab, 
+    theme, 
+    toggleTheme, 
+    showToast, 
+    ajoOffers, 
+    ajoError, 
+    isAjoLoading, 
+    refetchOffers, 
+    assuranceSessionId, 
+    clearAssuranceSession 
+  } = useApp();
   const [isPromoOpen, setIsPromoOpen] = React.useState(false);
+  const [activeHelpTab, setActiveHelpTab] = React.useState("safari");
 
   React.useEffect(() => {
     // Show welcome promo popup 1.2 seconds after reload
@@ -74,24 +86,122 @@ const InnerApp = () => {
                     border: "1px solid rgba(255, 23, 68, 0.25)",
                   }}
                 >
-                  AJO Connection Error
+                  {isAjoLoading ? "Refetching..." : "AJO Connection Blocked"}
                 </span>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-                  <AlertTriangle size={48} color="#FF1744" />
+                  {isAjoLoading ? (
+                    <RotateCw size={48} color="var(--accent-color)" style={{ animation: "spin 1s linear infinite" }} />
+                  ) : (
+                    <AlertTriangle size={48} color="#FF1744" />
+                  )}
                 </div>
                 <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "8px" }}>
-                  Decision Fetch Failed
+                  {isAjoLoading ? "Retrying Connection..." : "Decision Fetch Failed"}
                 </h3>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "20px", lineHeight: "1.5" }}>
+                <p style={{ fontSize: "0.76rem", color: "#FF8A80", backgroundColor: "rgba(255, 23, 68, 0.05)", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(255, 23, 68, 0.15)", marginBottom: "20px", fontFamily: "var(--font-mono)", wordBreak: "break-all", textAlign: "left", lineHeight: "1.4" }}>
                   {ajoError}
                 </p>
-                <button
-                  onClick={() => setIsPromoOpen(false)}
-                  className="btn-secondary"
-                  style={{ padding: "12px", border: "1px solid var(--border-color)" }}
+
+                {/* Glassmorphic Tabs for Troubleshooting */}
+                <div
+                  style={{
+                    backgroundColor: "var(--bg-tertiary)",
+                    border: "1px solid var(--border-color-light)",
+                    borderRadius: "14px",
+                    padding: "12px",
+                    marginBottom: "20px",
+                    textAlign: "left"
+                  }}
                 >
-                  Dismiss
-                </button>
+                  <div style={{ display: "flex", gap: "6px", marginBottom: "10px", borderBottom: "1px solid var(--border-color-light)", paddingBottom: "8px" }}>
+                    <button
+                      onClick={() => setActiveHelpTab("safari")}
+                      style={{
+                        flex: 1,
+                        fontSize: "0.68rem",
+                        fontWeight: "700",
+                        padding: "6px 4px",
+                        borderRadius: "8px",
+                        backgroundColor: activeHelpTab === "safari" ? "var(--bg-secondary)" : "transparent",
+                        color: activeHelpTab === "safari" ? "var(--accent-color)" : "var(--text-secondary)",
+                        border: activeHelpTab === "safari" ? "1px solid var(--border-color)" : "1px solid transparent",
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      Safari ITP Guide
+                    </button>
+                    <button
+                      onClick={() => setActiveHelpTab("proxy")}
+                      style={{
+                        flex: 1,
+                        fontSize: "0.68rem",
+                        fontWeight: "700",
+                        padding: "6px 4px",
+                        borderRadius: "8px",
+                        backgroundColor: activeHelpTab === "proxy" ? "var(--bg-secondary)" : "transparent",
+                        color: activeHelpTab === "proxy" ? "var(--accent-color)" : "var(--text-secondary)",
+                        border: activeHelpTab === "proxy" ? "1px solid var(--border-color)" : "1px solid transparent",
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      Local Proxy Guide
+                    </button>
+                  </div>
+
+                  {activeHelpTab === "safari" ? (
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                      <span style={{ fontWeight: "700", color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>⚠️ iOS Tracking Blockers</span>
+                      Mobile Safari's Advanced Tracking Protection blocks requests to `edge.adobedc.net` by default.
+                      <ol style={{ paddingLeft: "16px", margin: "6px 0 0 0", display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <li>Open iOS <strong>Settings</strong> app</li>
+                        <li>Navigate to <strong>Safari &gt; Advanced &gt; Advanced Tracking and Fingerprinting Protection</strong></li>
+                        <li>Toggle setting to <strong>Off</strong> or <strong>Private Browsing Only</strong></li>
+                      </ol>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                      <span style={{ fontWeight: "700", color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>🔌 LAN Wi-Fi Proxy Route</span>
+                      Route Edge network requests through your Mac's CORS-enabled dev proxy.
+                      <ol style={{ paddingLeft: "16px", margin: "6px 0 0 0", display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <li>Ensure phone and Mac are on the same Wi-Fi</li>
+                        <li>In the app's Profile settings tab, set the <strong>Edge Host / Gateway</strong> field to:
+                          <code style={{ display: "block", margin: "4px 0", padding: "6px", backgroundColor: "var(--bg-secondary)", borderRadius: "6px", fontFamily: "var(--font-mono)", fontSize: "0.66rem", color: "var(--accent-color)", wordBreak: "break-all" }}>
+                            {(() => {
+                              if (typeof window !== "undefined" && window.location) {
+                                const hostname = window.location.hostname;
+                                const isLocal = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(hostname);
+                                if (isLocal) {
+                                  return `http://${window.location.host}/api/ajo-edge`;
+                                }
+                              }
+                              return "http://<your-mac-ip>:5173/api/ajo-edge";
+                            })()}
+                          </code>
+                        </li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    onClick={refetchOffers}
+                    disabled={isAjoLoading}
+                    className="btn-primary"
+                    style={{ flex: 1, padding: "12px", fontSize: "0.8rem" }}
+                  >
+                    {isAjoLoading ? "Retrying..." : "Retry"}
+                  </button>
+                  <button
+                    onClick={() => setIsPromoOpen(false)}
+                    className="btn-secondary"
+                    style={{ flex: 1, padding: "12px", fontSize: "0.8rem", border: "1px solid var(--border-color)" }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </>
             ) : !popupOffer ? (
               <>

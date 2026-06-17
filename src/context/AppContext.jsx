@@ -26,20 +26,32 @@ export const AppProvider = ({ children }) => {
   // AJO Configuration State
   const [ajoCredentials, setAjoCredentials] = useState(() => {
     const saved = localStorage.getItem("aether_ajo_creds");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse AJO credentials from local storage");
-      }
-    }
-    return {
+    let creds = {
       datastreamId: import.meta.env.VITE_AEP_DATASTREAM_ID || "",
       orgId: import.meta.env.VITE_AEP_ORG_ID || "",
       popupSurface: import.meta.env.VITE_AJO_SURFACE_POPUP || "mobileapp://aether-connect/reload-popup",
       dashboardSurface: import.meta.env.VITE_AJO_SURFACE_DASHBOARD || "mobileapp://aether-connect/dashboard-banner",
       edgeHost: import.meta.env.VITE_AEP_EDGE_HOST || "https://edge.adobedc.net"
     };
+
+    if (saved) {
+      try {
+        creds = { ...creds, ...JSON.parse(saved) };
+      } catch (e) {
+        console.error("Failed to parse AJO credentials from local storage");
+      }
+    }
+
+    // Auto-detect local network IP hosts (e.g. when testing on mobile) and map default edgeHost to the dev server proxy
+    if (typeof window !== "undefined" && window.location) {
+      const hostname = window.location.hostname;
+      const isLocal = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(hostname);
+      if (isLocal && (!creds.edgeHost || creds.edgeHost === "https://edge.adobedc.net")) {
+        creds.edgeHost = `http://${window.location.host}/api/ajo-edge`;
+      }
+    }
+
+    return creds;
   });
 
   const [ajoOffers, setAjoOffers] = useState(null);
@@ -136,6 +148,12 @@ export const AppProvider = ({ children }) => {
     showToast("AJO configurations saved!");
   };
 
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  const refetchOffers = () => {
+    setRefetchTrigger((prev) => prev + 1);
+  };
+
   // Trigger AJO propositions fetch, including Assurance ID for tracing
   useEffect(() => {
     const fetchOffers = async () => {
@@ -153,7 +171,7 @@ export const AppProvider = ({ children }) => {
       }
     };
     fetchOffers();
-  }, [ajoCredentials, assuranceSessionId]);
+  }, [ajoCredentials, assuranceSessionId, refetchTrigger]);
 
   // States
   const [boostersActive, setBoostersActive] = useState([]);
@@ -300,6 +318,7 @@ export const AppProvider = ({ children }) => {
         ajoOffers,
         isAjoLoading,
         ajoError,
+        refetchOffers,
         assuranceSessionId,
         clearAssuranceSession,
         assuranceSessionPin,

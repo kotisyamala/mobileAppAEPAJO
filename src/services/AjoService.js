@@ -32,9 +32,22 @@ export const AjoService = {
       throw new Error("AJO credentials not configured. Please configure your Datastream ID and Org ID in the Profile Settings tab.");
     }
 
-    const host = import.meta.env.DEV 
-      ? "" 
-      : (edgeHost && edgeHost.trim() ? edgeHost.trim() : "https://edge.adobedc.net");
+    let resolvedHost = "https://edge.adobedc.net";
+    if (edgeHost && edgeHost.trim()) {
+      let rawHost = edgeHost.trim();
+      // Prepend protocol if missing (http for local loopbacks / IPs, https otherwise)
+      if (!/^https?:\/\//i.test(rawHost)) {
+        const isLocal = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(rawHost);
+        rawHost = `${isLocal ? "http" : "https"}://${rawHost}`;
+      }
+      // Remove trailing slashes
+      while (rawHost.endsWith("/")) {
+        rawHost = rawHost.slice(0, -1);
+      }
+      resolvedHost = rawHost;
+    }
+
+    const host = import.meta.env.DEV ? "" : resolvedHost;
     const path = import.meta.env.DEV ? "/api/ajo-edge/ee/v1/interact" : "/ee/v1/interact";
     const endpoint = `${host}${path}?configId=${datastreamId}`;
 
