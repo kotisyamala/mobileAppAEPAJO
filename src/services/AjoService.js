@@ -20,9 +20,10 @@ export const AjoService = {
    * Falls back to local offers if datastream parameters are missing or requests fail.
    * 
    * @param {Object} credentials - The current user-configured credentials
+   * @param {string} [assuranceSessionId] - The active Assurance validation session token
    * @returns {Promise<Object>} Object containing popupOffer and dashboardOffer
    */
-  fetchOffers: async (credentials) => {
+  fetchOffers: async (credentials, assuranceSessionId) => {
     const ecid = getOrCreateECID();
     const { datastreamId, orgId, popupSurface, dashboardSurface } = credentials;
 
@@ -60,13 +61,34 @@ export const AjoService = {
       ]
     };
 
+    // If connected to an active Assurance session, append verification block to payload metadata
+    if (assuranceSessionId) {
+      requestPayload.meta = {
+        state: {
+          entries: [
+            {
+              key: "assuranceSessionId",
+              value: assuranceSessionId
+            }
+          ]
+        }
+      };
+    }
+
+    const requestHeaders = {
+      "Content-Type": "application/json"
+    };
+
+    // Attach Assurance session validation token to HTTP headers
+    if (assuranceSessionId) {
+      requestHeaders["x-adobe-aep-validation-token"] = assuranceSessionId;
+    }
+
     try {
       console.log("AjoService: Fetching offers from AEP Edge Network (Experience Decisioning)...", endpoint, requestPayload);
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: requestHeaders,
         body: JSON.stringify(requestPayload)
       });
 

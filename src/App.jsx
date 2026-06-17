@@ -11,7 +11,7 @@ import { Sun, Moon, AlertTriangle } from "lucide-react";
 
 // Nested InnerApp component to access Context
 const InnerApp = () => {
-  const { activeTab, theme, toggleTheme, showToast, ajoOffers, ajoError } = useApp();
+  const { activeTab, theme, toggleTheme, showToast, ajoOffers, ajoError, assuranceSessionId, clearAssuranceSession } = useApp();
   const [isPromoOpen, setIsPromoOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -245,13 +245,25 @@ const InnerApp = () => {
           <div className="logo-dot" />
           <span>Aether Connect</span>
         </div>
-        <button
-          onClick={toggleTheme}
-          className="header-action-btn"
-          aria-label="Toggle interface theme"
-        >
-          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {assuranceSessionId && (
+            <div 
+              className="assurance-badge"
+              onClick={clearAssuranceSession}
+              title="Click to disconnect from Assurance session"
+            >
+              <span className="assurance-dot" />
+              <span>Assurance Active</span>
+            </div>
+          )}
+          <button
+            onClick={toggleTheme}
+            className="header-action-btn"
+            aria-label="Toggle interface theme"
+          >
+            {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+        </div>
       </header>
 
       {/* Scrollable Viewport */}

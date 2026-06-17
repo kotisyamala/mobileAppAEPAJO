@@ -45,19 +45,52 @@ export const AppProvider = ({ children }) => {
   const [isAjoLoading, setIsAjoLoading] = useState(false);
   const [ajoError, setAjoError] = useState(null);
 
+  const [assuranceSessionId, setAssuranceSessionId] = useState(() => {
+    return localStorage.getItem("aether_assurance_session_id") || "";
+  });
+
+  // Listen for AEP Assurance session parameter in deep links on initialization
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let sessionParam = "";
+    for (const [key, value] of params.entries()) {
+      if (key.toLowerCase() === "adb_validation_sessionid") {
+        sessionParam = value;
+        break;
+      }
+    }
+
+    if (sessionParam) {
+      console.log("AEP Assurance: Session ID detected from deep link:", sessionParam);
+      setAssuranceSessionId(sessionParam);
+      localStorage.setItem("aether_assurance_session_id", sessionParam);
+      showToast("Connected to AEP Assurance session!", "success");
+
+      // Clean the query parameter from URL to maintain a clean address bar
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
+
+  const clearAssuranceSession = () => {
+    setAssuranceSessionId("");
+    localStorage.removeItem("aether_assurance_session_id");
+    showToast("Disconnected from Assurance session", "info");
+  };
+
   const saveAjoCredentials = (newCreds) => {
     setAjoCredentials(newCreds);
     localStorage.setItem("aether_ajo_creds", JSON.stringify(newCreds));
     showToast("AJO configurations saved!");
   };
 
-  // Trigger AJO propositions fetch
+  // Trigger AJO propositions fetch, including Assurance ID for tracing
   useEffect(() => {
     const fetchOffers = async () => {
       setIsAjoLoading(true);
       setAjoError(null);
       try {
-        const offers = await AjoService.fetchOffers(ajoCredentials);
+        const offers = await AjoService.fetchOffers(ajoCredentials, assuranceSessionId);
         setAjoOffers(offers);
       } catch (err) {
         console.error("Error fetching AJO propositions:", err);
@@ -68,7 +101,7 @@ export const AppProvider = ({ children }) => {
       }
     };
     fetchOffers();
-  }, [ajoCredentials]);
+  }, [ajoCredentials, assuranceSessionId]);
 
   // States
   const [boostersActive, setBoostersActive] = useState([]);
@@ -215,6 +248,8 @@ export const AppProvider = ({ children }) => {
         ajoOffers,
         isAjoLoading,
         ajoError,
+        assuranceSessionId,
+        clearAssuranceSession,
       }}
     >
       {children}
