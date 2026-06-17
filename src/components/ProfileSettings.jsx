@@ -332,6 +332,18 @@ const ProfileSettings = () => {
               />
             </div>
           </div>
+          <div>
+            <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Edge Host / Gateway (optional)</label>
+            <input
+              type="text"
+              name="edgeHost"
+              value={formCreds.edgeHost || ""}
+              onChange={handleCredChange}
+              placeholder="Default: https://edge.adobedc.net"
+              className="form-input"
+              style={{ padding: "10px 12px", fontSize: "0.85rem" }}
+            />
+          </div>
           <button
             type="submit"
             disabled={isAjoLoading}
@@ -655,6 +667,7 @@ const ProfileSettings = () => {
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   style={{
                     width: "100%",
                     height: "100%",

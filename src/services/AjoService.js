@@ -25,14 +25,16 @@ export const AjoService = {
    */
   fetchOffers: async (credentials, assuranceSessionId) => {
     const ecid = getOrCreateECID();
-    const { datastreamId, orgId, popupSurface, dashboardSurface } = credentials;
+    const { datastreamId, orgId, popupSurface, dashboardSurface, edgeHost } = credentials;
 
     // If datastream or surfaces are not set, throw error immediately
     if (!datastreamId || datastreamId.trim() === "" || datastreamId.trim() === "your_datastream_id_here" || !orgId) {
       throw new Error("AJO credentials not configured. Please configure your Datastream ID and Org ID in the Profile Settings tab.");
     }
 
-    const host = import.meta.env.DEV ? "" : "https://edge.adobedc.net";
+    const host = import.meta.env.DEV 
+      ? "" 
+      : (edgeHost && edgeHost.trim() ? edgeHost.trim() : "https://edge.adobedc.net");
     const path = import.meta.env.DEV ? "/api/ajo-edge/ee/v1/interact" : "/ee/v1/interact";
     const endpoint = `${host}${path}?configId=${datastreamId}`;
 

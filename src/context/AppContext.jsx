@@ -37,7 +37,8 @@ export const AppProvider = ({ children }) => {
       datastreamId: import.meta.env.VITE_AEP_DATASTREAM_ID || "",
       orgId: import.meta.env.VITE_AEP_ORG_ID || "",
       popupSurface: import.meta.env.VITE_AJO_SURFACE_POPUP || "mobileapp://aether-connect/reload-popup",
-      dashboardSurface: import.meta.env.VITE_AJO_SURFACE_DASHBOARD || "mobileapp://aether-connect/dashboard-banner"
+      dashboardSurface: import.meta.env.VITE_AJO_SURFACE_DASHBOARD || "mobileapp://aether-connect/dashboard-banner",
+      edgeHost: import.meta.env.VITE_AEP_EDGE_HOST || "https://edge.adobedc.net"
     };
   });
 
