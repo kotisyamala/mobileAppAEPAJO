@@ -49,6 +49,10 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem("aether_assurance_session_id") || "";
   });
 
+  const [assuranceSessionPin, setAssuranceSessionPin] = useState(() => {
+    return localStorage.getItem("aether_assurance_session_pin") || "";
+  });
+
   // Listen for AEP Assurance session parameter in deep links on initialization
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -72,9 +76,56 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  const connectAssuranceSession = (linkOrId, pin = "") => {
+    if (!linkOrId || !linkOrId.trim()) {
+      showToast("Please enter a valid Assurance Session Link or ID", "error");
+      return false;
+    }
+
+    let sessionId = linkOrId.trim();
+
+    // Check if the input is a URL containing the session ID query param
+    try {
+      if (sessionId.includes("?")) {
+        const queryPart = sessionId.split("?")[1];
+        const urlParams = new URLSearchParams(queryPart);
+        for (const [key, value] of urlParams.entries()) {
+          if (key.toLowerCase() === "adb_validation_sessionid") {
+            sessionId = value;
+            break;
+          }
+        }
+      } else if (sessionId.includes("/session/")) {
+        const parts = sessionId.split("/session/");
+        if (parts.length > 1) {
+          sessionId = parts[1].split(/[?#]/)[0];
+        }
+      }
+    } catch (e) {
+      console.error("AEP Assurance: Failed to parse session link:", e);
+    }
+
+    setAssuranceSessionId(sessionId);
+    localStorage.setItem("aether_assurance_session_id", sessionId);
+
+    if (pin && pin.trim()) {
+      const sanitizedPin = pin.trim();
+      setAssuranceSessionPin(sanitizedPin);
+      localStorage.setItem("aether_assurance_session_pin", sanitizedPin);
+    } else {
+      setAssuranceSessionPin("");
+      localStorage.removeItem("aether_assurance_session_pin");
+    }
+
+    showToast("Connected to AEP Assurance session!", "success");
+    return true;
+  };
+
   const clearAssuranceSession = () => {
     setAssuranceSessionId("");
+    setAssuranceSessionPin("");
     localStorage.removeItem("aether_assurance_session_id");
+    localStorage.removeItem("aether_assurance_session_pin");
     showToast("Disconnected from Assurance session", "info");
   };
 
@@ -250,6 +301,8 @@ export const AppProvider = ({ children }) => {
         ajoError,
         assuranceSessionId,
         clearAssuranceSession,
+        assuranceSessionPin,
+        connectAssuranceSession,
       }}
     >
       {children}
