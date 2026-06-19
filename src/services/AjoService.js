@@ -183,5 +183,154 @@ export const AjoService = {
       console.error("AjoService: Error contacting Edge Network:", error);
       throw new Error(`Adobe Experience Edge network request failed: ${error.message}`);
     }
+  },
+
+  /**
+   * General XDM collection post targeting AEP Edge Network interact endpoint.
+   * Logs events inside the console database for trace debugging.
+   */
+  sendXdmEvent: async (credentials, eventType, xdmData, identityMap = null, logCallback = null) => {
+    const { datastreamId, orgId, edgeHost } = credentials;
+    if (!datastreamId || datastreamId.trim() === "" || datastreamId.trim() === "your_datastream_id_here" || !orgId) {
+      throw new Error("AJO credentials not configured. Please configure your Datastream ID and Org ID in settings.");
+    }
+
+    const ecid = getOrCreateECID();
+
+    let resolvedHost = "https://edge.adobedc.net";
+    if (edgeHost && edgeHost.trim()) {
+      let rawHost = edgeHost.trim();
+      if (!/^https?:\/\//i.test(rawHost)) {
+        const isLocal = /localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(rawHost);
+        rawHost = `${isLocal ? "http" : "https"}://${rawHost}`;
+      }
+      while (rawHost.endsWith("/")) {
+        rawHost = rawHost.slice(0, -1);
+      }
+      resolvedHost = rawHost;
+    }
+
+    const host = import.meta.env.DEV ? "" : resolvedHost;
+    const path = import.meta.env.DEV ? "/api/ajo-edge/ee/v1/interact" : "/ee/v1/interact";
+    const endpoint = `${host}${path}?configId=${datastreamId}`;
+
+    // Consolidate identity map
+    const defaultIdentityMap = {
+      ECID: [{ id: ecid, primary: true }]
+    };
+    const finalIdentityMap = identityMap ? { ...defaultIdentityMap, ...identityMap } : defaultIdentityMap;
+
+    const eventPayload = {
+      events: [
+        {
+          xdm: {
+            eventType,
+            identityMap: finalIdentityMap,
+            ...xdmData
+          }
+        }
+      ]
+    };
+
+    const headers = {
+      "Content-Type": "application/json"
+    };
+
+    const startTime = Date.now();
+    const logEntry = {
+      id: Date.now() + Math.random().toString(36).substr(2, 5),
+      timestamp: new Date().toLocaleTimeString(),
+      eventType,
+      endpoint,
+      payload: eventPayload,
+      status: "pending",
+      duration: 0,
+      response: null,
+      error: null
+    };
+
+    // Callback to push state immediately as pending
+    if (logCallback) logCallback(logEntry);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(eventPayload)
+      });
+
+      const duration = Date.now() - startTime;
+      logEntry.duration = duration;
+
+      if (!response.ok) {
+        throw new Error(`AEP Edge Network returned HTTP status ${response.status}`);
+      }
+
+      const responseJson = await response.json();
+      logEntry.status = "success";
+      logEntry.response = responseJson;
+      if (logCallback) logCallback(logEntry);
+
+      return responseJson;
+    } catch (err) {
+      const duration = Date.now() - startTime;
+      logEntry.duration = duration;
+      logEntry.status = "failed";
+      logEntry.error = err.message;
+      if (logCallback) logCallback(logEntry);
+      throw err;
+    }
+  },
+
+  trackPageView: async (credentials, pageName, logCallback) => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const xdmData = {
+      web: {
+        webPageDetails: {
+          name: pageName,
+          URL: url
+        }
+      }
+    };
+    return AjoService.sendXdmEvent(credentials, "web.webpagedetails.pageViews", xdmData, null, logCallback);
+  },
+
+  trackCommercePurchase: async (credentials, compiledItems, price, profile, logCallback) => {
+    const xdmData = {
+      commerce: {
+        order: {
+          priceTotal: price,
+          currencyCode: "USD"
+        },
+        purchases: {
+          value: 1
+        }
+      },
+      productListItems: compiledItems
+    };
+
+    const identityMap = profile ? buildIdentityMap(profile) : null;
+    return AjoService.sendXdmEvent(credentials, "commerce.purchases", xdmData, identityMap, logCallback);
+  },
+
+  trackIdentityLogin: async (credentials, profile, logCallback) => {
+    const xdmData = {};
+    const identityMap = profile ? buildIdentityMap(profile) : null;
+    return AjoService.sendXdmEvent(credentials, "user.login", xdmData, identityMap, logCallback);
   }
+};
+
+// Helper to compile dynamic identityMap mapping for user profiles
+const buildIdentityMap = (profile) => {
+  const map = {};
+  if (profile.email) {
+    map.Email = [{ id: profile.email, authenticatedState: "authenticated" }];
+  }
+  if (profile.phone) {
+    map.Phone = [{ id: profile.phone, authenticatedState: "authenticated" }];
+  }
+  if (profile.crmId) {
+    map.CRM = [{ id: profile.crmId, authenticatedState: "authenticated" }];
+  }
+  return map;
 };

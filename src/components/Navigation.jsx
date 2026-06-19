@@ -2,6 +2,23 @@ import React from "react";
 import { useApp } from "../context/AppContext";
 import { Activity, Smartphone, MessageSquare, User } from "lucide-react";
 
+// Adobe "A" triangle logo as an inline SVG component
+const AdobeLogo = ({ size = 22, className, isActive }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ display: "block" }}
+  >
+    <path
+      d="M9.5 3H3v18l6.5-18zM14.5 3H21v18l-6.5-18zM12 8.5L16 21h-3l-1.2-3.4H8.5L12 8.5z"
+      fill={isActive ? "var(--accent-color)" : "currentColor"}
+    />
+  </svg>
+);
+
 const Navigation = () => {
   const { activeTab, setActiveTab, chatMessages } = useApp();
 
@@ -13,13 +30,13 @@ const Navigation = () => {
     { id: "usage", label: "Usage", icon: Activity },
     { id: "plans", label: "Plans", icon: Smartphone },
     { id: "support", label: "Support", icon: MessageSquare, badge: showChatBadge ? "•" : null },
+    { id: "general", label: "Adobe", icon: "adobe" },
     { id: "profile", label: "Profile", icon: User },
   ];
 
   return (
     <nav className="bottom-navigation-bar">
       {tabs.map((tab) => {
-        const IconComponent = tab.icon;
         const isActive = activeTab === tab.id;
 
         return (
@@ -30,11 +47,22 @@ const Navigation = () => {
             aria-label={tab.label}
           >
             <div style={{ position: "relative" }}>
-              <IconComponent
-                size={22}
-                className="nav-tab-icon"
-                strokeWidth={isActive ? 2.2 : 1.8}
-              />
+              {tab.icon === "adobe" ? (
+                <AdobeLogo
+                  size={22}
+                  className="nav-tab-icon"
+                  isActive={isActive}
+                />
+              ) : (() => {
+                const IconComponent = tab.icon;
+                return (
+                  <IconComponent
+                    size={22}
+                    className="nav-tab-icon"
+                    strokeWidth={isActive ? 2.2 : 1.8}
+                  />
+                );
+              })()}
               {tab.badge && (
                 <span
                   style={{

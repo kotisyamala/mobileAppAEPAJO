@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { Wifi, Plus, CreditCard, Activity, Cpu, Play, Gift, Sparkles, Smartphone, AlertTriangle } from "lucide-react";
+import { Wifi, Plus, CreditCard, Activity, Cpu, Play, Gift, Sparkles, Smartphone, AlertTriangle, Globe } from "lucide-react";
 
 // Reusable Circular SVG Progress Meter Component
 const CircularProgress = ({ value, max, size = 90, strokeWidth = 8, color = "var(--accent-color)" }) => {
@@ -84,8 +84,21 @@ const UsageDashboard = () => {
   };
 
   const isDataWarning = dataUsed / dataLimit > 0.8;
-
   const dashboardOffer = ajoOffers?.dashboardOffer;
+
+  const getOfferIcon = (type) => {
+    switch (type) {
+      case "speed":
+        return <Activity size={20} color="var(--accent-color)" style={{ marginTop: "2px" }} />;
+      case "data":
+        return <Wifi size={20} color="var(--accent-color)" style={{ marginTop: "2px" }} />;
+      case "roaming":
+        return <Globe size={20} color="var(--accent-color)" style={{ marginTop: "2px" }} />;
+      case "referral":
+      default:
+        return <Gift size={20} color="var(--accent-color)" style={{ marginTop: "2px" }} />;
+    }
+  };
 
   return (
     <div className="fade-in" style={{ padding: "20px" }}>
@@ -242,43 +255,8 @@ const UsageDashboard = () => {
         </h3>
         
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {/* 1. Contextual Dynamic Offer based on current data limit usage */}
-          {isDataWarning ? (
-            <div
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 214, 0, 0.1) 0%, rgba(255, 170, 0, 0.05) 100%)",
-                border: "1px dashed var(--warning-color)",
-                padding: "16px",
-                borderRadius: "16px",
-                display: "flex",
-                gap: "14px",
-                alignItems: "flex-start",
-              }}
-            >
-              <Sparkles size={20} color="var(--warning-color)" style={{ marginTop: "2px" }} />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: "0.88rem", fontWeight: "700", color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>
-                  Double Data Booster Promo
-                </span>
-                <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "12px", lineHeight: "1.4" }}>
-                  Low on speed? Get twice the value. Purchase a +10GB booster pass today for just $15.
-                </span>
-                <button
-                  onClick={() => setIsAddonOpen(true)}
-                  style={{
-                    backgroundColor: "var(--text-primary)",
-                    color: "var(--bg-primary)",
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    fontSize: "0.72rem",
-                    fontWeight: "700",
-                  }}
-                >
-                  Buy Boosters
-                </button>
-              </div>
-            </div>
-          ) : ajoError ? (
+          {/* 1. Personalization offer card (with AJO error/empty fallback) */}
+          {ajoError ? (
             <div
               style={{
                 background: "rgba(255, 23, 68, 0.08)",
@@ -334,7 +312,7 @@ const UsageDashboard = () => {
                 alignItems: "flex-start",
               }}
             >
-              <Gift size={20} color="var(--accent-color)" style={{ marginTop: "2px" }} />
+              {getOfferIcon(dashboardOffer.type)}
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: "0.88rem", fontWeight: "700", color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>
                   {dashboardOffer.title}
@@ -354,6 +332,44 @@ const UsageDashboard = () => {
                   }}
                 >
                   {dashboardOffer.actionText}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Contextual Dynamic Offer based on current data limit usage */}
+          {isDataWarning && (
+            <div
+              style={{
+                background: "linear-gradient(135deg, rgba(255, 214, 0, 0.1) 0%, rgba(255, 170, 0, 0.05) 100%)",
+                border: "1px dashed var(--warning-color)",
+                padding: "16px",
+                borderRadius: "16px",
+                display: "flex",
+                gap: "14px",
+                alignItems: "flex-start",
+              }}
+            >
+              <Sparkles size={20} color="var(--warning-color)" style={{ marginTop: "2px" }} />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: "0.88rem", fontWeight: "700", color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>
+                  Double Data Booster Promo
+                </span>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "12px", lineHeight: "1.4" }}>
+                  Low on speed? Get twice the value. Purchase a +10GB booster pass today for just $15.
+                </span>
+                <button
+                  onClick={() => setIsAddonOpen(true)}
+                  style={{
+                    backgroundColor: "var(--text-primary)",
+                    color: "var(--bg-primary)",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    fontSize: "0.72rem",
+                    fontWeight: "700",
+                  }}
+                >
+                  Buy Boosters
                 </button>
               </div>
             </div>

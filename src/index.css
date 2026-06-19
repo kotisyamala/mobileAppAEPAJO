@@ -94,6 +94,13 @@ body {
   min-height: -webkit-fill-available;
 }
 
+/* When in web mode, body should be a simple full-viewport container */
+body:has(.web-layout) {
+  display: block;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
 /* Device frame simulator */
 .mobile-app-container {
   position: relative;
@@ -580,5 +587,430 @@ button {
   100% { top: 0%; }
 }
 
+/* ════════════════════════════════════════════════════════════════
+   WEB / DESKTOP LAYOUT STYLES
+   ════════════════════════════════════════════════════════════════ */
 
+.web-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
 
+/* ─── Top Navigation Bar ─── */
+.web-topbar {
+  height: 60px;
+  min-height: 60px;
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 30;
+}
+
+.web-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.web-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.web-brand:hover {
+  color: var(--accent-color);
+}
+
+.web-brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-left: 1px solid var(--border-color);
+  padding-left: 16px;
+}
+
+.web-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.web-topbar-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.web-topbar-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.web-view-toggle {
+  width: auto;
+  padding: 0 14px;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font-sans);
+}
+
+.web-badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #FF1744;
+  box-shadow: 0 0 5px rgba(255, 23, 68, 0.6);
+}
+
+.web-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  color: var(--accent-contrast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+  transition: all 0.2s;
+  margin-left: 4px;
+}
+
+.web-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.web-assurance-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--success-color);
+  background: var(--success-glow);
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.web-assurance-badge:hover {
+  background: rgba(0, 230, 118, 0.15);
+}
+
+/* Notification Dropdown */
+.web-dropdown-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 98;
+}
+
+.web-notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  z-index: 99;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ─── Body: Sidebar + Content ─── */
+.web-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Sidebar ─── */
+.web-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+
+.web-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 4px;
+}
+
+.web-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border: 1px solid transparent;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.web-sidebar-item:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.web-sidebar-item.active {
+  background-color: rgba(0, 229, 255, 0.06);
+  color: var(--accent-color);
+  border-color: rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.web-sidebar-icon {
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.web-sidebar-label {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.web-sidebar-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  box-shadow: 0 0 6px var(--accent-color);
+  flex-shrink: 0;
+}
+
+.web-sidebar-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: var(--accent-color);
+  color: var(--accent-contrast);
+  min-width: 20px;
+  height: 20px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Sidebar Footer */
+.web-sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.web-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.web-sidebar-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  color: var(--accent-contrast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.web-sidebar-user-name {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.web-sidebar-user-email {
+  display: block;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+/* ─── Main Content ─── */
+.web-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+}
+
+.web-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.web-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.web-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.web-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.web-content-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8px 12px 60px;
+}
+
+/* ─── Responsive Web Layout ─── */
+@media (max-width: 768px) {
+  .web-sidebar {
+    width: 64px;
+    min-width: 64px;
+  }
+
+  .web-sidebar-label,
+  .web-sidebar-user-name,
+  .web-sidebar-user-email {
+    display: none;
+  }
+
+  .web-sidebar-user {
+    justify-content: center;
+  }
+
+  .web-sidebar-item {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .web-sidebar-icon {
+    width: auto;
+  }
+
+  .web-brand-subtitle {
+    display: none;
+  }
+
+  .web-notif-dropdown {
+    width: 280px;
+    right: -60px;
+  }
+
+  .web-content-inner {
+    max-width: 100%;
+    padding: 8px 8px 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .web-topbar {
+    padding: 0 14px;
+  }
+
+  .web-brand {
+    font-size: 1rem;
+  }
+
+  .web-view-toggle span {
+    display: none;
+  }
+
+  .web-view-toggle {
+    width: 38px;
+    padding: 0;
+  }
+}
+
+/* ─── Web Layout Content Overrides ─── */
+/* Chat container needs to fill available height in web layout */
+.web-content .chat-container {
+  height: calc(100vh - 120px);
+}
+
+/* Bottom sheets in web view need fixed positioning since there's no mobile-app-container */
+.web-layout .bottom-sheet {
+  position: fixed;
+  z-index: 100;
+}
+
+.web-layout .sheet-backdrop {
+  position: fixed;
+  z-index: 99;
+}
+
+/* Enable text selection in web mode */
+.web-layout * {
+  user-select: auto;
+}
+
+/* AddonModal in web view needs fixed position */
+.web-layout .addon-sheet-container {
+  position: fixed;
+  z-index: 100;
+}

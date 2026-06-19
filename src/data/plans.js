@@ -69,6 +69,69 @@ export const boosters = [
   }
 ];
 
+export const techProducts = [
+  {
+    id: "aether-phone-15",
+    name: "Aether Phone 15 Pro",
+    price: 999.00,
+    sku: "dev-aether-phone-15",
+    image: "images/aether-phone.png",
+    description: "Premium titanium aerospace build, A17 Pro bionic chip, advanced 5G modem.",
+    details: [
+      "Titanium Chassis & Ceramic Shield",
+      "6.7\" Super Retina XDR OLED screen",
+      "A17 Pro Bionic Processor",
+      "Tri-lens Pro Camera system (48MP)",
+      "Instant eSIM dual-standby profiling"
+    ]
+  },
+  {
+    id: "aether-watch-ultra",
+    name: "Aether Watch Ultra",
+    price: 799.00,
+    sku: "dev-aether-watch-ultra",
+    image: "images/aether-watch.png",
+    description: "Cellular rugged smartwatch built for extreme environments and deep dives.",
+    details: [
+      "49mm Titanium Case & Sapphire glass",
+      "Up to 60 hours battery life",
+      "Precision dual-frequency GPS",
+      "Built-in 5G eSIM cellular profile",
+      "Real-time health telemetry sensors"
+    ]
+  },
+  {
+    id: "aether-router-5g",
+    name: "Aether Gateway Router 5G",
+    price: 199.00,
+    sku: "dev-aether-router-5g",
+    image: "images/aether-router.png",
+    description: "High-capacity smart home 5G broadband gateway router.",
+    details: [
+      "Ultra-low latency Wi-Fi 7 dual-band",
+      "Supports 120+ active devices",
+      "Cryptographic security gateway",
+      "Instant eSIM profile activation",
+      "4x Gigabit Ethernet connection ports"
+    ]
+  },
+  {
+    id: "aether-pods-pro",
+    name: "Aether Pods Pro",
+    price: 249.00,
+    sku: "dev-aether-pods-pro",
+    image: "images/aether-pods.png",
+    description: "Next-gen true wireless earbuds with immersive spatial audio.",
+    details: [
+      "Active Noise Cancellation & Transparency",
+      "Personalized Spatial Audio tracking",
+      "Up to 30 hours charging case battery",
+      "Sweat and water resistant (IPX4)",
+      "Seamless Aether multi-device pairing"
+    ]
+  }
+];
+
 export const faqResponses = [
   {
     keywords: ["esim", "activation", "activate", "qr"],

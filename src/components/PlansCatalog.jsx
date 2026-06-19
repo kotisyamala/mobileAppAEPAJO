@@ -1,240 +1,295 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { plans } from "../data/plans";
-import { Check, ShieldCheck, Rss, Smartphone, Cpu } from "lucide-react";
+import { plans, techProducts } from "../data/plans";
+import { Check, ShieldCheck, ShoppingCart, ArrowRight, Cpu } from "lucide-react";
 
 const PlansCatalog = () => {
-  const { activePlan, changePlan, showToast } = useApp();
+  const { 
+    activePlan, 
+    cart, 
+    addToCart, 
+    setActiveTab
+  } = useApp();
   
-  // eSIM activation states
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isProvisioning, setIsProvisioning] = useState(false);
-  const [provisionStep, setProvisionStep] = useState(0); // 0: Connect, 1: Provisioning, 2: Done
+  const [catalogTab, setCatalogTab] = useState("plans"); // "plans" | "devices"
 
-  const startProvisioning = (plan) => {
-    setSelectedPlan(plan);
-    setIsProvisioning(true);
-    setProvisionStep(0);
+  // Calculate cart details
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Step 0 -> Step 1
-    setTimeout(() => {
-      setProvisionStep(1);
-      // Step 1 -> Step 2
-      setTimeout(() => {
-        setProvisionStep(2);
-      }, 1500);
-    }, 1200);
-  };
-
-  const completeProvisioning = () => {
-    changePlan(selectedPlan);
-    setIsProvisioning(false);
-    setSelectedPlan(null);
-    setProvisionStep(0);
+  // Helper to compile relative image paths
+  const getImageUrl = (imagePath) => {
+    return `${import.meta.env.BASE_URL || '/'}${imagePath}`;
   };
 
   return (
-    <div className="fade-in" style={{ padding: "20px" }}>
-      <h2 style={{ fontSize: "1.4rem", marginBottom: "6px", color: "var(--text-primary)" }}>Data Plans</h2>
+    <div className="fade-in" style={{ padding: "20px", paddingBottom: "120px" }}>
+      <h2 style={{ fontSize: "1.4rem", marginBottom: "6px", color: "var(--text-primary)" }}>Shop Catalog</h2>
       <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "20px" }}>
-        Select a network subscription profile. All plans support instant eSIM installation.
+        Configure network data subscriptions or purchase premium cellular hardware components.
       </p>
 
-      {/* Plans list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        {plans.map((plan) => {
-          const isActive = activePlan.id === plan.id;
-          
-          return (
-            <div
-              key={plan.id}
-              style={{
-                backgroundColor: "var(--bg-secondary)",
-                borderRadius: "20px",
-                border: isActive ? "2px solid var(--accent-color)" : "1px solid var(--border-color)",
-                padding: "24px 20px",
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: isActive ? "0 4px 20px var(--accent-glow)" : "var(--shadow-sm)",
-                transition: "var(--transition-smooth)",
-              }}
-            >
-              {/* Recommended badge */}
-              {plan.recommended && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -12,
-                    right: 20,
-                    backgroundColor: "var(--accent-color)",
-                    color: "var(--accent-contrast)",
-                    fontSize: "0.7rem",
-                    fontWeight: "700",
-                    padding: "4px 12px",
-                    borderRadius: "100px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    boxShadow: "0 0 10px var(--accent-color)",
-                  }}
-                >
-                  Recommended
-                </span>
-              )}
-
-              {/* Title, limit & pricing */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                <div>
-                  <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "4px" }}>
-                    {plan.name}
-                  </h3>
-                  <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                    High-speed 5G connectivity
-                  </span>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: "1.5rem", fontWeight: "700", color: "var(--text-primary)", display: "block" }}>
-                    ${plan.price.toFixed(0)}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>/ month</span>
-                </div>
-              </div>
-
-              {/* Specs list */}
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
-                {plan.details.map((detail, idx) => (
-                  <li key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    <Check size={14} color="var(--accent-color)" />
-                    <span>{detail}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Action buttons */}
-              {isActive ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    backgroundColor: "var(--bg-tertiary)",
-                    color: "var(--text-primary)",
-                    padding: "14px",
-                    borderRadius: "14px",
-                    fontSize: "0.85rem",
-                    fontWeight: "700",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <ShieldCheck size={16} color="var(--success-color)" />
-                  Active Subscription
-                </div>
-              ) : (
-                <button onClick={() => startProvisioning(plan)} className="btn-primary">
-                  Subscribe & Install eSIM
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Provisioning overlay modal */}
-      {isProvisioning && (
-        <div
+      {/* Category selector toggle tab */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "24px", padding: "4px", backgroundColor: "var(--bg-tertiary)", borderRadius: "14px", border: "1px solid var(--border-color-light)" }}>
+        <button
+          onClick={() => setCatalogTab("plans")}
           style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 60,
-            backgroundColor: "var(--bg-primary)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "32px 24px",
-            animation: "fadeIn 0.3s ease-out forwards",
+            flex: 1,
+            padding: "10px 0",
+            fontSize: "0.78rem",
+            fontWeight: "700",
+            borderRadius: "10px",
+            backgroundColor: catalogTab === "plans" ? "var(--bg-secondary)" : "transparent",
+            color: catalogTab === "plans" ? "var(--accent-color)" : "var(--text-secondary)",
+            border: catalogTab === "plans" ? "1px solid var(--border-color)" : "1px solid transparent",
+            cursor: "pointer",
+            transition: "all 0.2s"
           }}
         >
-          {provisionStep < 2 ? (
-            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
-              {/* Spinner animation */}
-              <div style={{ position: "relative", width: "80px", height: "80px" }}>
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    border: "4px solid var(--border-color)",
-                    borderTopColor: "var(--accent-color)",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                    boxShadow: "0 0 10px var(--accent-glow)",
-                  }}
-                />
-                <Cpu
-                  size={28}
-                  style={{
-                    position: "absolute",
-                    top: "50%", left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    color: "var(--accent-color)",
-                    animation: "pulse 1.5s infinite",
-                  }}
-                />
-              </div>
+          eSIM Plans
+        </button>
+        <button
+          onClick={() => setCatalogTab("devices")}
+          style={{
+            flex: 1,
+            padding: "10px 0",
+            fontSize: "0.78rem",
+            fontWeight: "700",
+            borderRadius: "10px",
+            backgroundColor: catalogTab === "devices" ? "var(--bg-secondary)" : "transparent",
+            color: catalogTab === "devices" ? "var(--accent-color)" : "var(--text-secondary)",
+            border: catalogTab === "devices" ? "1px solid var(--border-color)" : "1px solid transparent",
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
+        >
+          Tech Devices
+        </button>
+      </div>
 
-              <div>
-                <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", marginBottom: "8px" }}>
-                  {provisionStep === 0 ? "Connecting to Carrier..." : "Provisioning eSIM profile..."}
-                </h3>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", maxWidth: "260px" }}>
-                  {provisionStep === 0
-                    ? "Establishing secure connection with Aether profile distribution node."
-                    : "Writing cryptographic network credentials to device secure enclave."}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div
-              style={{
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "24px",
-                animation: "scaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-              }}
-            >
+      {/* eSIM Plans List */}
+      {catalogTab === "plans" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {plans.map((plan) => {
+            const isActive = activePlan.id === plan.id;
+            const isInCart = cart.some(item => item.id === plan.id);
+            
+            return (
               <div
+                key={plan.id}
                 style={{
-                  width: "72px",
-                  height: "72px",
-                  borderRadius: "50%",
-                  backgroundColor: "var(--success-color)",
-                  color: "var(--accent-contrast)",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "20px",
+                  border: isActive ? "2px solid var(--accent-color)" : "1px solid var(--border-color)",
+                  padding: "24px 20px",
+                  position: "relative",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 20px var(--success-glow)",
+                  flexDirection: "column",
+                  boxShadow: isActive ? "0 4px 20px var(--accent-glow)" : "var(--shadow-sm)",
+                  transition: "var(--transition-smooth)",
                 }}
               >
-                <Check size={36} strokeWidth={3} />
-              </div>
+                {/* Recommended badge */}
+                {plan.recommended && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -12,
+                      right: 20,
+                      backgroundColor: "var(--accent-color)",
+                      color: "var(--accent-contrast)",
+                      fontSize: "0.7rem",
+                      fontWeight: "700",
+                      padding: "4px 12px",
+                      borderRadius: "100px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      boxShadow: "0 0 10px var(--accent-color)",
+                    }}
+                  >
+                    Recommended
+                  </span>
+                )}
 
-              <div>
-                <h3 style={{ fontSize: "1.35rem", color: "var(--text-primary)", marginBottom: "8px" }}>
-                  eSIM Ready
-                </h3>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", maxWidth: "240px" }}>
-                  Your subscription for <strong>{selectedPlan?.name}</strong> has been successfully configured on this device.
-                </p>
-              </div>
+                {/* Title, limit & pricing */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+                  <div>
+                    <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "4px" }}>
+                      {plan.name}
+                    </h3>
+                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                      High-speed 5G connectivity
+                    </span>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: "1.5rem", fontWeight: "700", color: "var(--text-primary)", display: "block" }}>
+                      ${plan.price.toFixed(0)}
+                    </span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>/ month</span>
+                  </div>
+                </div>
 
-              <button onClick={completeProvisioning} className="btn-primary" style={{ minWidth: "180px", marginTop: "16px" }}>
-                Done
-              </button>
-            </div>
-          )}
+                {/* Specs list */}
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px", padding: 0 }}>
+                  {plan.details.map((detail, idx) => (
+                    <li key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                      <Check size={14} color="var(--accent-color)" />
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Action buttons */}
+                {isActive ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      backgroundColor: "var(--bg-tertiary)",
+                      color: "var(--text-primary)",
+                      padding: "14px",
+                      borderRadius: "14px",
+                      fontSize: "0.85rem",
+                      fontWeight: "700",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <ShieldCheck size={16} color="var(--success-color)" />
+                    Active Subscription
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => addToCart(plan, "plan")} 
+                    className="btn-primary"
+                  >
+                    {isInCart ? "In Cart 🛒" : "Add eSIM to Cart"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tech Devices List */}
+      {catalogTab === "devices" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {techProducts.map((prod) => {
+            const isInCart = cart.some(item => item.id === prod.id);
+            
+            return (
+              <div
+                key={prod.id}
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "20px",
+                  border: isInCart ? "2px solid var(--accent-color)" : "1px solid var(--border-color)",
+                  padding: "24px 20px",
+                  display: "flex",
+                  gap: "16px",
+                  flexDirection: "column",
+                  boxShadow: isInCart ? "0 4px 20px var(--accent-glow)" : "var(--shadow-sm)",
+                  transition: "var(--transition-smooth)",
+                }}
+              >
+                {/* Product Layout */}
+                <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", marginBottom: "12px" }}>
+                  {prod.image ? (
+                    <img 
+                      src={getImageUrl(prod.image)} 
+                      alt={prod.name} 
+                      style={{ 
+                        width: "80px", 
+                        height: "80px", 
+                        borderRadius: "12px", 
+                        objectFit: "cover", 
+                        border: "1px solid var(--border-color-light)",
+                        backgroundColor: "#000"
+                      }}
+                    />
+                  ) : (
+                    <div style={{ width: "80px", height: "80px", borderRadius: "12px", backgroundColor: "var(--bg-tertiary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent-color)" }}>
+                      <Cpu size={32} />
+                    </div>
+                  )}
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
+                      <h3 style={{ fontSize: "1.05rem", color: "var(--text-primary)", margin: 0 }}>
+                        {prod.name}
+                      </h3>
+                      <span style={{ fontSize: "1.15rem", fontWeight: "750", color: "var(--text-primary)" }}>
+                        ${prod.price.toFixed(0)}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
+                      {prod.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specs list */}
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px", padding: 0 }}>
+                  {prod.details.map((detail, idx) => (
+                    <li key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                      <Check size={12} color="var(--accent-color)" />
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Add to Cart button */}
+                <button
+                  onClick={() => addToCart(prod, "device")}
+                  className="btn-primary"
+                >
+                  {isInCart ? "In Cart 🛒" : "Add Device to Cart"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Shopping Cart Trigger (routes to CartPage tab) */}
+      {cart.length > 0 && (
+        <div
+          onClick={() => setActiveTab("cart")}
+          style={{
+            position: "absolute",
+            bottom: "76px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "var(--bg-secondary)",
+            border: "1.5px solid var(--accent-color)",
+            borderRadius: "100px",
+            padding: "12px 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            cursor: "pointer",
+            boxShadow: "0 0 20px var(--accent-glow)",
+            zIndex: 40,
+            animation: "pulse 2s infinite",
+            width: "80%",
+            maxWidth: "340px",
+            justifyContent: "space-between"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ShoppingCart size={18} color="var(--accent-color)" />
+            <span style={{ fontSize: "0.82rem", fontWeight: "700", color: "var(--text-primary)" }}>
+              {cartItemCount} item{cartItemCount > 1 ? "s" : ""} in Cart
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--accent-color)" }}>
+              ${cartSubtotal.toFixed(2)}
+            </span>
+            <ArrowRight size={14} color="var(--accent-color)" />
+          </div>
         </div>
       )}
     </div>
