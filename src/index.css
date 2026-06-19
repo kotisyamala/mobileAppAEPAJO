@@ -31,6 +31,7 @@
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7);
   
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
   --nav-height: 72px;
   
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -206,6 +207,7 @@ button {
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--glass-border);
   padding: 16px 20px;
+  padding-top: calc(16px + var(--safe-area-top));
   display: flex;
   justify-content: space-between;
   align-items: center;

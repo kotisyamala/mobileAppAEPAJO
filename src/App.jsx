@@ -628,7 +628,7 @@ const InnerApp = () => {
           <div
             style={{
               position: "absolute",
-              top: "56px",
+              top: "calc(56px + env(safe-area-inset-top, 0px))",
               left: "12px",
               right: "12px",
               zIndex: 88,
@@ -711,7 +711,7 @@ const InnerApp = () => {
           }}
           style={{
             position: "absolute",
-            top: "12px",
+            top: "calc(12px + env(safe-area-inset-top, 0px))",
             left: "12px",
             right: "12px",
             zIndex: 100,
